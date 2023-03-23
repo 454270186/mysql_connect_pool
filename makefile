@@ -4,7 +4,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -g
+CXXFLAGS = -std=c++14 -I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -g
 
 # Linker flags
 LDFLAGS = -L/usr/lib/mysql -lmysqlclient -lpthread
