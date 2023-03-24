@@ -4,13 +4,13 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -std=c++14 -I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -g
+CXXFLAGS = -std=c++14 -I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -g -I./include
 
 # Linker flags
 LDFLAGS = -L/usr/lib/mysql -lmysqlclient -lpthread
 
 # Source files
-SRCS = main.cpp
+SRCS = main.cpp src/MysqlConn.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

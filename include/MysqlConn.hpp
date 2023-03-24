@@ -21,6 +21,8 @@ public:
     bool commit();
     bool rollback();
 
+    string get_error();
+
     // for alive time
     void refresh_alive_time();
     long long get_alive_time();
