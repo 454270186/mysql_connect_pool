@@ -1,5 +1,6 @@
 #include "ConnPool.hpp"
 using namespace Json;
+using namespace std;
 
 ConnPool* ConnPool::get_conn_pool() {
     static ConnPool pool;
@@ -16,9 +17,9 @@ ConnPool::ConnPool() {
     }
 
     // producer thread
-    thread producer(&produce_conn, this);
+    thread producer(&ConnPool::produce_conn, this);
     // consumer thread
-    thread consumer(&recycle_conn, this);
+    thread consumer(&ConnPool::recycle_conn, this);
 
     producer.detach();
     consumer.detach();
@@ -64,9 +65,47 @@ void ConnPool::add_conn() {
 }
 
 void ConnPool::produce_conn() {
+    while (true) {
+        {
+            unique_lock<mutex> lock(m_mtx);
+            m_pro_cond.wait(lock, [this] { return this->m_conn_q.size() < this->m_max_size; });
+            add_conn();
+        }
 
+        m_cons_cond.notify_one();
+    }
 }
 
 void ConnPool::recycle_conn() {
+    while (true) {
+        {
+            unique_lock<mutex> lock(m_mtx);
+            m_cons_cond.wait(lock, [this] { return this->m_conn_q.size() > this->m_min_size; });
 
+            MysqlConn* mysql_conn = m_conn_q.front();
+            if (mysql_conn->get_alive_time() >= m_max_idle_time) {
+                m_conn_q.pop();
+                delete mysql_conn;
+
+                m_pro_cond.notify_all();
+            }
+        }
+    }
+}
+
+shared_ptr<MysqlConn> ConnPool::get_conn() {
+    unique_lock<mutex> lock(m_mtx);
+    
+    // 如果队列为空就阻塞
+    m_cons_cond.wait(lock, [this] { return !(this->m_conn_q.empty()); });
+
+    shared_ptr<MysqlConn> conn_ptr(m_conn_q.front(), [this](MysqlConn* ptr) {
+        unique_lock<mutex> lock(this->m_mtx);
+        ptr->refresh_alive_time();
+        this->m_conn_q.push(ptr);
+    });
+
+    m_conn_q.pop();
+    m_pro_cond.notify_all();
+    return conn_ptr;
 }

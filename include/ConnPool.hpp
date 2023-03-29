@@ -50,6 +50,7 @@ private:
 
     // thread
     mutex m_mtx;
-    condition_variable m_cond;
+    condition_variable m_pro_cond;
+    condition_variable m_cons_cond;
     queue<MysqlConn*> m_conn_q;
 };
