@@ -1,8 +1,13 @@
+#include <iostream>
 #include "MysqlConn.hpp"
+using namespace std;
 
 MysqlConn::MysqlConn() {
     m_conn = mysql_init(NULL);
-
+    if (m_conn == NULL) {
+        cerr << "mysql_init() failed in MysqlConn()" << endl;
+        return;
+    }
     mysql_set_character_set(m_conn, "utf8");
 }
 
@@ -15,8 +20,13 @@ MysqlConn::~MysqlConn() {
 }
 
 bool MysqlConn::connect(string ip, string user, string password, string db_name, unsigned int port) {
-    MYSQL* ret = mysql_real_connect(m_conn, ip.c_str(), user.c_str(), password.c_str(), db_name.c_str(), port, NULL, 0);
+    //cout << ip << user << endl;
+
     
+    if (m_conn == NULL || m_conn == nullptr) {
+        cout << "m_conn is null" << endl;
+    }
+    MYSQL* ret = mysql_real_connect(m_conn, ip.c_str(), user.c_str(), password.c_str(), db_name.c_str(), port, NULL, 0);
     return ret != nullptr;
 }
 
@@ -62,6 +72,19 @@ string MysqlConn::value(int index) {
     unsigned long length = mysql_fetch_lengths(m_res)[index];
 
     return string(ans, length);
+}
+
+bool MysqlConn::fetch_row() {
+    int row_cnt = mysql_num_fields(m_res);
+    while ((m_row = mysql_fetch_row(m_res))) {
+        for (int i = 0; i < row_cnt; i++) {
+            printf("%s ", m_row[i] ? m_row[i] : "NULL");
+        }
+
+        printf("\n");
+    }
+
+    return true;
 }
 
 bool MysqlConn::transaction() {

@@ -1,0 +1,11 @@
+{
+    "ip": "localhost",
+    "user": "xiaofei",
+    "password": "454270186",
+    "db_name": "mysqlconn",
+    "port": 3306,
+    "max_size": 50,
+    "min_size": 10,
+    "timeout": 100,
+    "max_idle_time": 20
+}

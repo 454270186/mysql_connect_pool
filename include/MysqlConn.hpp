@@ -1,4 +1,5 @@
-#pragma one
+#ifndef _MYSQL_CONN
+#define _MYSQL_CONN
 #include <mysql/mysql.h>
 #include <string>
 #include <chrono>
@@ -17,6 +18,7 @@ public:
     bool update(string sql);
     bool next();
     string value(int index);
+    bool fetch_row();
     bool transaction();
     bool commit();
     bool rollback();
@@ -36,3 +38,5 @@ private:
 
     std::chrono::steady_clock::time_point m_alive_time;
 };
+
+#endif

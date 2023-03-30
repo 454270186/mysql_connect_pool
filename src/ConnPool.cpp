@@ -1,4 +1,5 @@
 #include "ConnPool.hpp"
+#include <iostream>
 using namespace Json;
 using namespace std;
 
@@ -11,11 +12,9 @@ ConnPool::ConnPool() {
     if (!parseJson()) {
         return;
     }
-
     for (int i = 0; i < m_min_size; i++) {
         add_conn();
     }
-
     // producer thread
     thread producer(&ConnPool::produce_conn, this);
     // consumer thread
@@ -34,23 +33,27 @@ ConnPool::~ConnPool() {
 }
 
 bool ConnPool::parseJson() {
-    fstream ifs("../db_conf.json");
-
+    fstream ifs("./db_conf.json");
+    if (ifs.is_open()) {
+        cout << "file is open" << endl;
+    }
     Reader rd;
     Value root;
     rd.parse(ifs, root);
-
+    
     if (root.isObject()) {
         m_db.ip = root["ip"].asString();
         m_db.user = root["user"].asString();
         m_db.password = root["password"].asString();
         m_db.db_name = root["db_name"].asString();
-        m_db.port = root["port"].asUInt();
+        m_db.port = root["port"].asInt();
         m_max_size = root["max_size"].asInt();
         m_min_size = root["min_size"].asInt();
         m_timeout = root["timeout"].asInt();
         m_max_idle_time = root["max_idle_time"].asInt();
 
+
+        //cout << m_db.ip << m_db.user << m_db.password << m_db.db_name << m_db.db_name << endl;
         return true;
     }
 
@@ -58,21 +61,30 @@ bool ConnPool::parseJson() {
 }
 
 void ConnPool::add_conn() {
-    MysqlConn* conn;
-    conn->connect(m_db.ip, m_db.user, m_db.password, m_db.db_name, m_db.port);
+    MysqlConn* conn = new MysqlConn();
+    if (!conn->connect(m_db.ip, m_db.user, m_db.password, m_db.db_name, m_db.port)) {
+        std::cerr << "连接数据库失败" << std::endl;
+        return;
+    }
+    cout << "连接数据库成功" << endl;
+    //conn->connect("localhost", "xiaofei", "454270186", "mysqlconn", 3306);
+    //conn->connect(m_db.ip, m_db.user, m_db.password, m_db.db_name, m_db.port);
     conn->refresh_alive_time();
     m_conn_q.push(conn);
+    //cout << "current size: " << m_conn_q.size() << endl;
 }
 
 void ConnPool::produce_conn() {
     while (true) {
         {
             unique_lock<mutex> lock(m_mtx);
+            //cout << "producer thread" << this_thread::get_id() << endl;
             m_pro_cond.wait(lock, [this] { return this->m_conn_q.size() < this->m_max_size; });
             add_conn();
         }
 
-        m_cons_cond.notify_one();
+        m_cons_cond.notify_all();
+        this_thread::sleep_for(chrono::milliseconds(300));
     }
 }
 
@@ -80,15 +92,18 @@ void ConnPool::recycle_conn() {
     while (true) {
         {
             unique_lock<mutex> lock(m_mtx);
+            //cout << "recycle thread" << this_thread::get_id() << endl;
             m_cons_cond.wait(lock, [this] { return this->m_conn_q.size() > this->m_min_size; });
 
             MysqlConn* mysql_conn = m_conn_q.front();
             if (mysql_conn->get_alive_time() >= m_max_idle_time) {
                 m_conn_q.pop();
                 delete mysql_conn;
-
+                //cout << "delete a exipired connection, current size: " << m_conn_q.size() << endl;
                 m_pro_cond.notify_all();
             }
+
+            this_thread::sleep_for(chrono::seconds(2));
         }
     }
 }
@@ -103,6 +118,7 @@ shared_ptr<MysqlConn> ConnPool::get_conn() {
         unique_lock<mutex> lock(this->m_mtx);
         ptr->refresh_alive_time();
         this->m_conn_q.push(ptr);
+        //cout << "return a conntion, current size: " << this->m_conn_q.size() << endl;
     });
 
     m_conn_q.pop();

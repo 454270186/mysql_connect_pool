@@ -4,19 +4,19 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -std=c++14 -I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -g -I./include
+CXXFLAGS = -std=c++14 -I/usr/include/mysql -I/usr/include/jsoncpp -DBIG_JOINS=1 -fno-strict-aliasing -g -I./include
 
 # Linker flags
 LDFLAGS = -L/usr/lib/mysql -lmysqlclient -lpthread -ljsoncpp
 
 # Source files
-SRCS = main.cpp src/MysqlConn.cpp src/ConnPool.cpp
+SRCS = connection.cpp src/MysqlConn.cpp src/ConnPool.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
 
 # Executable name
-EXEC = main
+EXEC = connection
 
 all: $(EXEC)
 

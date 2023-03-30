@@ -1,4 +1,5 @@
-#pragma one
+#ifndef _CONN_POOL
+#define _CONN_POOL
 #include <fstream>
 #include <memory>
 #include <thread>
@@ -54,3 +55,5 @@ private:
     condition_variable m_cons_cond;
     queue<MysqlConn*> m_conn_q;
 };
+
+#endif
