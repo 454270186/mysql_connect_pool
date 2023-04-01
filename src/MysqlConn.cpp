@@ -14,15 +14,13 @@ MysqlConn::MysqlConn() {
 MysqlConn::~MysqlConn() {
     if (m_conn != nullptr) {
         mysql_close(m_conn);
+        //cout << "~MysqlConn()" << endl;
     }
-
+    //cout << "~MysqlConn()" << endl;
     free_result();
 }
 
 bool MysqlConn::connect(string ip, string user, string password, string db_name, unsigned int port) {
-    //cout << ip << user << endl;
-
-    
     if (m_conn == NULL || m_conn == nullptr) {
         cout << "m_conn is null" << endl;
     }

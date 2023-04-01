@@ -7,5 +7,5 @@
     "max_size": 50,
     "min_size": 10,
     "timeout": 100,
-    "max_idle_time": 20
+    "max_idle_time": 200
 }
